@@ -197,35 +197,49 @@ error_ota_t write_file_sd(const TCHAR* Path){
 	FIL Arquivo;
 	unsigned int BW = 0;
 	char file_size_buffer[] = {0,0,0,0,0,0,0,0,0,0};
+	char http_response_buffer[] = {0,0,0};
+	unsigned long http_response = 0;
 
 	//Abrindo arquivo
 	res = f_open(&Arquivo, Path, (file_size == 0)? FA_CREATE_ALWAYS | FA_WRITE : FA_OPEN_APPEND | FA_WRITE);
 
 	if(res == FR_OK){
 		/*-----CONSOME CABEÇALHO HTTP------*/
-		if(file_size == 0){//Entra somente na primeira vez para obter o tamanho do arquivo
+		if(file_size == 0){//Entra somente na primeira vez para obter o tamanho do arquivo e resposta do servidor
 			for (i = 0;
 				((strncmp((char *)&buf[i], "\r\n\r\n", 4) != 0) && (i < BUFFER_SIZE));
 				i++)
 			{
-				if((strncmp((char *)&buf[i], "Content-Length:", 15) == 0) && (file_size == 0)){
+				if((strncmp((char *)&buf[i], "HTTP/1.1", 8) == 0) && (file_size == 0)){
+					strncpy(http_response_buffer, (char *)&buf[i + 9], 3);
+					http_response = atoi(http_response_buffer);
+				}
+				if((strncmp((char *)&buf[i], "Content-Length:", 15) == 0) && (file_size == 0) && (http_response == 200)){
 					for (j = i + 16; strncmp((char *)&buf[j], "\r\n", 2) != 0 ;j++);
 					strncpy(file_size_buffer, (char *)&buf[i + 16], (j - (i + 16)));
 					file_size = atoi(file_size_buffer);
 				}
 			}
-			i += 4;
-			itoa(file_size, file_size_buffer, 10);
-			UARTPutString("File size: ", 11);
-			UARTPutString(file_size_buffer, strlen(file_size_buffer));
-			UARTPutString(" bytes\n\r>>", 10);
-			/*-----FIM DO CONSUMO DO CABEÇALHO HTTP------*/
-			//Escreve o restante do buffer no arquivo.
-			res = f_write(&Arquivo, (char *)&buf[i], (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size, &BW);//GRAVA NO ARQUIVO
-			if(res != FR_OK){
+			if(http_response != 200){
+				UARTPutString("HTTP error:", 11);
+				UARTPutString(http_response_buffer, strlen(http_response_buffer));
+				UARTPutString("\n\r>>", 4);
 				error_control = error_ota_general;
 			}
-			file_size -= (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size;
+			else{
+				i += 4;
+				itoa(file_size, file_size_buffer, 10);
+				UARTPutString("File size: ", 11);
+				UARTPutString(file_size_buffer, strlen(file_size_buffer));
+				UARTPutString(" bytes\n\r>>", 10);
+				/*-----FIM DO CONSUMO DO CABEÇALHO HTTP------*/
+				//Escreve o restante do buffer no arquivo.
+				res = f_write(&Arquivo, (char *)&buf[i], (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size, &BW);//GRAVA NO ARQUIVO
+				if(res != FR_OK){
+					error_control = error_ota_general;
+				}
+				file_size -= (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size;
+			}
 		}
 
 
