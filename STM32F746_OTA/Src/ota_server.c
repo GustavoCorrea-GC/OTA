@@ -375,7 +375,7 @@ void OTA(void *argument){
 	while(1){
 		xSemaphoreTake(sem_connected, portMAX_DELAY);
 		UARTPutString("\n\n\n\r>>", 6);
-		UARTPutString("Firmware 1 - Technology is just nature we taught to do cool trick", 65);
+		UARTPutString("Firmware 2 - The universe is a complexity machine", 49);
 		UARTPutString("\n\r>>", 4);
 		UARTPutString("Looking for new firmware...", 27);
 		UARTPutString("\n\r>>", 4);
