@@ -221,9 +221,11 @@ error_ota_t write_file_sd(const TCHAR* Path){
 				}
 			}
 			if(http_response != 200){
-				UARTPutString("HTTP error:", 11);
-				UARTPutString(http_response_buffer, strlen(http_response_buffer));
-				UARTPutString("\n\r>>", 4);
+				if(http_response != 0){
+					UARTPutString("HTTP error:", 11);
+					UARTPutString(http_response_buffer, strlen(http_response_buffer));
+					UARTPutString("\n\r>>", 4);
+				}
 				error_control = error_ota_general;
 			}
 			else{
@@ -241,8 +243,6 @@ error_ota_t write_file_sd(const TCHAR* Path){
 				file_size -= (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size;
 			}
 		}
-
-
 		else{
 			//Escreve o buffer no arquivo
 			res = f_write(&Arquivo, buf, (file_size > BUFFER_SIZE) ? BUFFER_SIZE : file_size, &BW);//GRAVA NO ARQUIVO
