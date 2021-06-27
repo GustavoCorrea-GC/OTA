@@ -369,14 +369,14 @@ void OTA(void *argument){
 	UARTPutString("\033[2J\033[H", 0);
 
 	// print welcome message
-	UARTPutString("Started OTA!\n\r>>", 16);
-
 	printf_install_putchar(UARTPutChar);
 	//Aguarda a inicialização do fatfs
 	vTaskDelay(1000);
 	while(1){
 		xSemaphoreTake(sem_connected, portMAX_DELAY);
 		UARTPutString("\n\n\n\r>>", 6);
+		UARTPutString("Firmware 1 - Technology is just nature we taught to do cool trick", 65);
+		UARTPutString("\n\r>>", 4);
 		UARTPutString("Looking for new firmware...", 27);
 		UARTPutString("\n\r>>", 4);
 		//Get the current version of the firmware from file
@@ -456,6 +456,10 @@ void OTA(void *argument){
 				UARTPutString("Firmware download fail!", 23);
 				UARTPutString("\n\r>>", 4);
 			}
+		}
+		else{
+			UARTPutString("Firmware up to date", 19);
+			UARTPutString("\n\r>>", 4);
 		}
 		//Remove files from SD card
 		f_unlink(FIRMWARE_NEW_VERSION_PATH);
